@@ -2,18 +2,30 @@
 Parafile — a local file ledger.
 Run:  pip install flask
       python app.py
-Then open http://127.0.0.1:5000
 """
 
 import os
 
 from flask import Flask, abort, jsonify, render_template, request, send_from_directory
+import shutil
+
+def get_free_storage(path='/'):
+    """
+    Return free storage space in bytes on the filesystem containing `path`.
+    Raises OSError if the path is invalid or inaccessible.
+    """
+    try:
+        usage = shutil.disk_usage(path)
+        return usage.free
+    except OSError as e:
+        raise RuntimeError(f"Failed to get disk usage: {e}")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-SOFT_CAP = 512 * 1024 * 1024  # storage meter ceiling (display only)
+# SOFT_CAP = 512 * 1024 * 1024  # storage meter ceiling (display only)
+SOFT_CAP = free_bytes = get_free_storage('/')          # root filesystem
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 256 * 1024 * 1024  # hard upload limit
