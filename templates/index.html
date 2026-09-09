@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parafile — local file ledger</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23201e1f'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23ff686b'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="wordmark" href="/"
+          ><span class="mark"></span>PARAFILE<sup>®</sup></a
+        >
+        <div class="topbar-meta mono">
+          <span class="clock" id="clock">--:--:--</span>
+          <span class="sep">/</span>
+          <span><span id="stat-count">0</span> FILES</span>
+          <span class="sep">/</span>
+          <span id="stat-size">0 B</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <!-- ============ dropzone / hero ============ -->
+      <section
+        class="dropzone"
+        id="dropzone"
+        tabindex="0"
+        role="button"
+        aria-label="Upload files: click to browse or drop files anywhere"
+      >
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+
+        <p class="kicker mono" id="kicker">DROPZONE — LOCAL DEPOSIT</p>
+        <h1 class="headline">
+          <span id="hl">Deposit<br />your files</span><span class="dot">.</span>
+        </h1>
+        <p class="sub">
+          Drag files anywhere on this page, or click to browse. Everything is
+          stored locally — this ledger never leaves your machine.
+        </p>
+        <p class="dz-hint mono">
+          CLICK TO BROWSE · MULTIPLE FILES OK · 256 MB MAX
+        </p>
+
+        <div class="progress" id="progress" hidden>
+          <div class="progress-track">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+          <span class="progress-label mono" id="progress-label">0%</span>
+        </div>
+
+        <input type="file" id="file-input" multiple hidden />
+      </section>
+
+      <!-- ============ ledger ============ -->
+      <section class="ledger">
+        <div class="ledger-head">
+          <h2 class="ledger-title mono">
+            LEDGER
+            <span class="count">/ <span id="ledger-count">00</span></span>
+          </h2>
+          <label class="filter">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              id="filter"
+              type="text"
+              placeholder="filter by name — press /"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </label>
+        </div>
+
+        <div class="meter">
+          <div class="meter-head mono">
+            <span>STORAGE</span>
+            <span
+              ><span id="meter-used">0 B</span> /
+              <span id="meter-cap">—</span></span
+            >
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill" id="meter-fill"></div>
+          </div>
+        </div>
+
+        <div class="thead mono" id="thead">
+          <span>#</span>
+          <button type="button" data-sort="name">
+            NAME
+            <svg
+              class="arr"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </button>
+          <button type="button" data-sort="ext">
+            KIND
+            <svg
+              class="arr"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </button>
+          <button type="button" data-sort="size" class="th-num">
+            SIZE
+            <svg
+              class="arr"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </button>
+          <button type="button" data-sort="modified">
+            MODIFIED
+            <svg
+              class="arr"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </button>
+          <span></span>
+        </div>
+
+        <ul class="rows" id="rows"></ul>
+
+        <div class="empty" id="empty" hidden>
+          <p class="empty-big">
+            Nothing deposited yet<span class="dot">.</span>
+          </p>
+          <p class="empty-sub mono">
+            DROP FILES ABOVE — THEY WILL BE INDEXED HERE
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap foot">
+      <span class="mono">PARAFILE — FILES NEVER LEAVE THIS MACHINE</span>
+      <span class="mono">FLASK · 127.0.0.1:5000</span>
+    </footer>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- delete confirmation -->
+    <div class="modal-backdrop" id="modal" hidden>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <p class="kicker mono">CONFIRM DELETION</p>
+        <h3 class="modal-title" id="modal-title">Delete this file?</h3>
+        <p class="modal-name mono" id="modal-name">—</p>
+        <p class="modal-note">
+          It will be removed from the local deposit folder. This cannot be
+          undone.
+        </p>
+        <div class="modal-actions">
+          <button class="btn ghost" id="modal-cancel" type="button">
+            Cancel
+          </button>
+          <button class="btn solid" id="modal-confirm" type="button">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        "use strict";
+        const $ = (s, el = document) => el.querySelector(s);
+
+        const I = {
+          file: '<svg class="ficon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+          download:
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+          trash:
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+        };
+
+        const state = {
+          files: [],
+          sortKey: "modified",
+          sortDir: -1,
+          filter: "",
+          first: true,
+        };
+        const rowsEl = $("#rows"),
+          emptyEl = $("#empty"),
+          toastsEl = $("#toasts"),
+          modal = $("#modal");
+        let pendingDelete = null,
+          dragging = false;
+
+        /* ---------- helpers ---------- */
+        const escHTML = (s) =>
+          String(s).replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+
+        function fmtBytes(n) {
+          if (!n) return "0 B";
+          const u = ["B", "KB", "MB", "GB", "TB"];
+          const i = Math.min(
+            u.length - 1,
+            Math.floor(Math.log(n) / Math.log(1024)),
+          );
+          return (n / 1024 ** i).toFixed(i ? 1 : 0) + " " + u[i];
+        }
+
+        function fmtDate(ts) {
+          const d = new Date(ts * 1000),
+            p = (n) => String(n).padStart(2, "0");
+          return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+        }
+
+        function toast(msg, kind = "") {
+          const el = document.createElement("div");
+          el.className = "toast " + kind;
+          el.innerHTML = `<span class="toast-msg mono">${escHTML(msg)}</span>`;
+          toastsEl.appendChild(el);
+          requestAnimationFrame(() => el.classList.add("in"));
+          setTimeout(() => {
+            el.classList.remove("in");
+            el.addEventListener("transitionend", () => el.remove(), {
+              once: true,
+            });
+            setTimeout(() => el.remove(), 500);
+          }, 3400);
+        }
+
+        /* ---------- render ---------- */
+        function sorted() {
+          const k = state.sortKey,
+            d = state.sortDir;
+          return [...state.files].sort((a, b) => {
+            let va = a[k],
+              vb = b[k];
+            if (typeof va === "string") {
+              va = va.toLowerCase();
+              vb = vb.toLowerCase();
+            }
+            return (va < vb ? -1 : va > vb ? 1 : 0) * d;
+          });
+        }
+
+        function rowHTML(f, idx, delay) {
+          const name = escHTML(f.name);
+          return `<li class="row" style="animation-delay:${delay}ms">
+      <span class="cell idx mono">${String(idx).padStart(3, "0")}</span>
+      <span class="cell name">${I.file}<span class="nm" title="${name}">${name}</span></span>
+      <span class="cell kind"><span class="tag mono">${escHTML(f.ext)}</span></span>
+      <span class="cell size mono">${fmtBytes(f.size)}</span>
+      <span class="cell mod mono">${fmtDate(f.modified)}</span>
+      <span class="cell actions">
+        <a class="icon-btn" href="/api/files/${encodeURIComponent(f.name)}/download" download
+           title="Download" aria-label="Download ${name}">${I.download}</a>
+        <button class="icon-btn danger" type="button" data-del="${name}"
+           title="Delete" aria-label="Delete ${name}">${I.trash}</button>
+      </span>
+    </li>`;
+        }
+
+        function render() {
+          const all = sorted();
+          const q = state.filter.trim().toLowerCase();
+          const visible = q
+            ? all.filter((f) => f.name.toLowerCase().includes(q))
+            : all;
+          rowsEl.innerHTML = visible
+            .map((f, i) =>
+              rowHTML(
+                f,
+                state.files.indexOf(f) + 1,
+                state.first ? Math.min(i * 35, 350) : 0,
+              ),
+            )
+            .join("");
+          emptyEl.hidden = visible.length > 0;
+          $("#ledger-count").textContent = String(state.files.length).padStart(
+            2,
+            "0",
+          );
+          state.first = false;
+        }
+
+        function updateStats(count, total, cap) {
+          $("#stat-count").textContent = count;
+          $("#stat-size").textContent = fmtBytes(total);
+          $("#meter-used").textContent = fmtBytes(total);
+          $("#meter-cap").textContent = fmtBytes(cap);
+          $("#meter-fill").style.width =
+            Math.min(100, (total / cap) * 100).toFixed(2) + "%";
+        }
+
+        async function refresh() {
+          try {
+            const res = await fetch("/api/files");
+            const data = await res.json();
+            state.files = data.files;
+            updateStats(data.files.length, data.total, data.cap);
+            render();
+          } catch {
+            toast("Could not reach the server", "error");
+          }
+        }
+
+        /* ---------- sorting ---------- */
+        const sortBtns = document.querySelectorAll("#thead [data-sort]");
+        sortBtns.forEach((btn) =>
+          btn.addEventListener("click", () => {
+            const key = btn.dataset.sort;
+            if (state.sortKey === key) state.sortDir *= -1;
+            else {
+              state.sortKey = key;
+              state.sortDir = key === "size" || key === "modified" ? -1 : 1;
+            }
+            updateSortUI();
+            render();
+          }),
+        );
+
+        function updateSortUI() {
+          sortBtns.forEach((btn) => {
+            const active = btn.dataset.sort === state.sortKey;
+            btn.classList.toggle("sorted", active);
+            btn.classList.toggle("desc", active && state.sortDir === -1);
+          });
+        }
+
+        /* ---------- filter ---------- */
+        const filterInput = $("#filter");
+        filterInput.addEventListener("input", () => {
+          state.filter = filterInput.value;
+          render();
+        });
+        filterInput.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            filterInput.value = "";
+            state.filter = "";
+            render();
+            filterInput.blur();
+          }
+        });
+        window.addEventListener("keydown", (e) => {
+          if (
+            e.key === "/" &&
+            !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)
+          ) {
+            e.preventDefault();
+            filterInput.focus();
+          }
+        });
+
+        /* ---------- clock ---------- */
+        const clockEl = $("#clock");
+        function tick() {
+          const d = new Date(),
+            p = (n) => String(n).padStart(2, "0");
+          clockEl.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+        }
+        tick();
+        setInterval(tick, 1000);
+
+        /* ---------- upload ---------- */
+        const dropzone = $("#dropzone"),
+          fileInput = $("#file-input");
+        const progress = $("#progress"),
+          progressBar = $("#progress-bar"),
+          progressLabel = $("#progress-label");
+
+        dropzone.addEventListener("click", () => fileInput.click());
+        dropzone.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            fileInput.click();
+          }
+        });
+        fileInput.addEventListener("change", () => {
+          upload(fileInput.files);
+          fileInput.value = "";
+        });
+
+        function setProgress(pct) {
+          progressBar.style.width = pct + "%";
+          progressLabel.textContent = pct + "%";
+        }
+
+        function upload(list) {
+          if (!list || !list.length) return;
+          const fd = new FormData();
+          for (const f of list) fd.append("files", f);
+          progress.hidden = false;
+          setProgress(0);
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/upload");
+          xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable)
+              setProgress(Math.round((e.loaded / e.total) * 100));
+          });
+          const done = () => {
+            progress.hidden = true;
+            let data = {};
+            try {
+              data = JSON.parse(xhr.responseText);
+            } catch {}
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const n = data.saved.length;
+              toast(
+                `Deposited ${n} file${n > 1 ? "s" : ""} — indexed in the ledger`,
+              );
+            } else {
+              toast(data.error || "Upload failed", "error");
+            }
+            refresh();
+          };
+          xhr.onload = done;
+          xhr.onerror = done;
+          xhr.send(fd);
+        }
+
+        /* ---------- drag & drop (whole page) ---------- */
+        const hl = $("#hl"),
+          kicker = $("#kicker");
+        let depth = 0;
+
+        function swap(el, html) {
+          el.classList.remove("swap");
+          void el.offsetWidth;
+          el.innerHTML = html;
+          el.classList.add("swap");
+        }
+
+        function setDragging(on) {
+          if (on === dragging) return;
+          dragging = on;
+          document.body.classList.toggle("dragging", on);
+          swap(hl, on ? "Release<br>to deposit" : "Deposit<br>your files");
+          swap(kicker, on ? "AWAITING RELEASE" : "DROPZONE — LOCAL DEPOSIT");
+        }
+
+        window.addEventListener("dragenter", (e) => {
+          e.preventDefault();
+          depth++;
+          setDragging(true);
+        });
+        window.addEventListener("dragover", (e) => e.preventDefault());
+        window.addEventListener("dragleave", () => {
+          if (--depth <= 0) {
+            depth = 0;
+            setDragging(false);
+          }
+        });
+        window.addEventListener("drop", (e) => {
+          e.preventDefault();
+          depth = 0;
+          setDragging(false);
+          if (e.dataTransfer && e.dataTransfer.files.length)
+            upload(e.dataTransfer.files);
+        });
+
+        /* ---------- delete ---------- */
+        rowsEl.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-del]");
+          if (!btn) return;
+          pendingDelete = btn.dataset.del;
+          $("#modal-name").textContent = pendingDelete;
+          modal.hidden = false;
+          $("#modal-confirm").focus();
+        });
+
+        function closeModal() {
+          modal.hidden = true;
+          pendingDelete = null;
+        }
+
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) closeModal();
+        });
+        $("#modal-cancel").addEventListener("click", closeModal);
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !modal.hidden) closeModal();
+        });
+
+        $("#modal-confirm").addEventListener("click", async () => {
+          if (!pendingDelete) return;
+          const name = pendingDelete;
+          try {
+            const res = await fetch(`/api/files/${encodeURIComponent(name)}`, {
+              method: "DELETE",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+              toast(`Deleted "${name}"`);
+              refresh();
+            } else toast(data.error || "Delete failed", "error");
+          } catch {
+            toast("Delete failed", "error");
+          }
+          closeModal();
+        });
+
+        /* ---------- boot ---------- */
+        updateSortUI();
+        refresh();
+      })();
+    </script>
+  </body>
+</html>
